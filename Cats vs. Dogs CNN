@@ -1,4 +1,5 @@
 //sorry for the long amount of comments here, got this all from a tutorial - https://www.youtube.com/watch?v=WvoLTXIjBYU
+//this is ment to compare cats vs. dogs
 #get pet images
 import sys
 tf.compat.v1.disable_eager_execution()
