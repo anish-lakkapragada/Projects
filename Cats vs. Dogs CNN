@@ -1,0 +1,218 @@
+//sorry for the long amount of comments here, got this all from a tutorial - https://www.youtube.com/watch?v=WvoLTXIjBYU
+#get pet images
+import sys
+tf.compat.v1.disable_eager_execution()
+sys.path.append(["PetImages2"])
+import numpy as np
+import os
+#from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import time
+import tensorflow as tf
+from tensorflow.keras.callbacks import TensorBoard
+import cv2
+import matplotlib.pyplot as plt
+#%load_ext tensorboard
+#NAME = "Cats-vs-dogs-cnn-64x2-{}".format(int(time.time()))
+
+#tensorboard = TensorBoard(log_dir = 'logs/{}'.format(NAME))
+#tensorbaord load 
+#%tensorboard --logdir logs
+DATADIR = sys.path[0]
+print(len(sys.path))
+
+#cat_dir = os.path.join(DATADIR, "Cat")
+#dog_dir = os.path.join(DATADIR, "Dog")
+CATEGORIES = ['DOG', 'CAT']
+import os
+os.chdir("/content/drive/My Drive/PetImages2")
+!ls
+
+
+IMG_SIZE = 50
+i = 0
+#make the training data
+training_data = []
+def create_training_data():
+  for category in CATEGORIES : 
+    path = os.path.join(DATADIR, category) # gets us into the path for dogs or cats
+    print(path)
+  #0 for dog, 1 for cat
+    class_num = CATEGORIES.index(category)
+    for img in os.listdir(path) :
+      try : 
+        img_array = cv2.imread(os.path.join(path, img), cv2.IMREAD_GRAYSCALE) #RGB data is 3x heavier, and color here is not a differentiating factor
+        IMG_SIZE = 50
+        #plt.imshow(img_array, cmap = "gray")
+        #plt.show()
+        #resize the image array 50 * 50 into a new array to show
+        new_array = cv2.resize(img_array, (IMG_SIZE, IMG_SIZE))
+        training_data.append([new_array, class_num])
+      except Exception as e : 
+        continue
+
+create_training_data()
+#get the length of teh training data 
+#print(len(training_data))
+
+#just try to balance the data, if 50-50 not bias when neural network doesn't know what to do 
+#shuffle the data so not dog-dog-cat-cat
+import random
+random.shuffle(training_data)
+print(training_data)
+
+
+
+#for sample in training_data : 
+  #print(sample[1])
+
+
+#capital X is feature set, Y is label set
+
+x= []
+X = []
+Y = []
+#print(len(X))
+for features, label in training_data : 
+  X.append(features)
+  Y.append(label)
+X = np.array(X)
+print(len(X))
+X = X.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+print(len(X))
+print(len(Y))
+amountOver = len(X) - len(Y)
+
+
+
+#numpification
+Y = np.array(Y)
+
+#Y = np.array(Y)
+#print(X[1])
+#print(Y[1])
+#import pickle
+#pickle_out = open(X.pickle, "wb")
+#pickle.dump(X. pickle_out)
+#pickle_out.close()
+
+#pickle_out = open(Y.pickle, "wb")
+#pickle.dump(Y, pickle_out)
+#pickle_out.close()
+
+#save the training data so we don't have to save it every time
+#.npy is a numpy array file that we coudl save it in
+
+#this is to save X and Y data sets
+np.save('features.npy', X) #saving
+X =np.load('features.npy')#loading
+
+np.save('labels.npy', Y) #saving
+Y =np.load('labels.npy')#loading
+
+#we have no loaded everything now we can try to do this e
+#Y#this is the second part of the notebook - Convolutional Neural Networks
+import numpy as np
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Flatten, Dense, Conv2D, MaxPooling2D, Dropout, Activation
+#import pickle 
+
+
+#here we have just loaded the past data from the notebook this is really fun
+X = np.load('features.npy')
+Y = np.load('labels.npy')
+
+
+
+#to normalize do (max value is 255) :
+X = X/255.0
+
+#But good practice do :
+#X = tf.keras.utils.normalize(X, axis = 1)
+
+#Build CNN architecture
+try : 
+  model = Sequential([])
+  #model.add(Conv2D(64, (3,3), input_shape = X.shape[1:], activation = tf.nn.relu))
+  #model.add(activation = tf.nn.relu)
+  #model.add(MaxPooling2D(pool_size=(2,2)))
+ # model.add(Conv2D(64, (3,3), activation = tf.nn.relu))
+  #model.add(activation = tf.nn.relu)
+ # model.add(MaxPooling2D(pool_size=(2,2)))
+  #flatten input
+  model.add(Flatten())
+  model.add(Dense(64, activation = tf.nn.relu))
+  #model.add(activation = tf.nn.relu)
+  model.add(Dense(1, activation = tf.nn.softmax))
+  #model.add(activation = tf.nn.sigmoid)
+except Exception as e : 
+  print("CNN Architecture failed")
+  pass
+
+
+#compile the model with loss, optimizer, and metrics
+experimental_run_tf_function=False
+model.compile(optimizer = "Adam", loss = "binary_crossentropy", metrics = ["accuracy"])
+i = 0
+x_test = []
+y_test = []
+while i < 0.02 * len(X) : 
+  x_test.append(X[i])
+  np.delete(X, i, 0 )
+  y_test.append(Y[i])
+  np.delete(Y, i, 0)
+  i += 1
+#this will get us the new training data, 98% of what it was before
+x_train = np.array(X, dtype = float)
+y_train = np.array(Y, dtype = float)
+#now time to numpify the x_test and y_test data
+x_test = np.array(x_test, dtype = float)
+y_test = np.array(y_test, dtype = float)
+#train the model, and you have to do validation_split as because all features and labels are extracted from teh data = we should set aside a percentage flr training - this is a manually made dataset
+model.fit(x_train, y_train, batch_size = 20, epochs = 1)#, callbacks = [tensorboard])
+#model.fit(X, Y, epochs = 500)
+#get the summary of the CNN
+model.summary()
+
+val_loss, val_acc = model.evaluate(x_test, y_test)
+print(str(val_loss) + " : loss, " + str(val_acc) + " : accuracy")
+
+
+#get the predictions!
+
+#first we need to use sys.path.append() to add the new directory of predictions
+sys.path.append(['CATS and DOGS Predictions'])
+print(sys.path)
+#create directory
+prediction_dir = sys.path[20]
+print(prediction_dir)
+#okay prediction directory here is working this is pretty great
+#categories
+prediction_categories = ['Cats_predictions', 'Dogs_predictions', 'Somewhere in b/w']
+os.chdir("/content/drive/My Drive/CATS and DOGS Predictions/Cats_predictions")
+!ls
+
+
+#model.load_weights('download-10.jpg')
+
+
+def prepare(filepath) :
+  IMG_SIZE = 70
+  #filepath =  tf.keras.preprocessing.image
+  img_array = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+  new_array = cv2.resize(img_array, (IMG_SIZE, IMG_SIZE))
+  new_array = new_array.flatten()
+  new_array = np.array(new_array, dtype = float)
+  new_array.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+  new_array = np.expand_dims(new_array, axis=0) 
+  print(new_array)
+  plt.imshow(new_array)
+  plt.show()
+#'download-10.jpg' = tf.cast('download-10.jpg', tf.float#
+#predictions = model.predict([prepare('download-10.jpg')])
+#print(predictions)
+
+predictions = model.predict([prepare('download-10.jpg')])
+print(predictions)
+
+
+
