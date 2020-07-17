@@ -1,2 +1,2 @@
 # Projects
-Currently all of my files here are stored. Thank you!
+Currently all of my files are stored here. Thank you!
